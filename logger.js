@@ -13,7 +13,10 @@ const transport = new winston.transports.DailyRotateFile({
 
 const logger = winston.createLogger({
   level: "info",
-  format: winston.format.json(),
+  format: winston.format.combine(
+    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    winston.format.prettyPrint()
+  ),
   transports: [transport],
 });
 

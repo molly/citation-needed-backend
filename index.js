@@ -10,7 +10,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.post("/newSubscriber", validateWebhook, async (req, res) => {
+app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
   try {
     let toName = "";
     if (req.body?.member?.current?.name) {
