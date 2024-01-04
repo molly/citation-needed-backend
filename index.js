@@ -1,4 +1,9 @@
 const express = require("express");
+const morgan = require("morgan");
+const https = require("https");
+const fs = require("fs");
+const path = require("path");
+const rfs = require("rfs");
 
 const { validateWebhook } = require("./auth");
 
@@ -9,6 +14,12 @@ const PORT = process.env.PORT || 5001;
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const logStream = rfs.createStream("backend.log", {
+  interval: "1d",
+  path: path.join(__dirname, "log"),
+});
+app.use(morgan("combined", { stream: logStream }));
 
 app.post("/newSubscriber", validateWebhook, async (req, res) => {
   try {
