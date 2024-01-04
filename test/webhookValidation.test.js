@@ -3,6 +3,7 @@ const crypto = require("crypto");
 
 const { ghostWebhookSecret } = require("../config");
 const app = require("../app");
+const { makeSignature } = require("./helpers");
 
 describe("test webhook validation", () => {
   test("app is working", async () => {
@@ -47,9 +48,8 @@ describe("test webhook validation", () => {
   });
 
   test("valid webhook signature", async () => {
-    const timestamp = Date.now();
-    const signature = crypto.createHmac("sha256", ghostWebhookSecret).update("{}").digest("hex");
-    const resp = await request(app).post("/api").set("X-Ghost-Signature", `sha256=${signature}, t=${timestamp}`);
+    const signature = makeSignature({});
+    const resp = await request(app).post("/api").set("X-Ghost-Signature", signature);
     expect(resp.statusCode).toBe(200);
   });
 });

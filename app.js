@@ -1,12 +1,17 @@
 const express = require("express");
-const path = require("path");
+const Mailgun = require("mailgun.js");
+const FormData = require("form-data");
 
 const { logger, httpLogFormatter } = require("./logger");
 const { validateWebhook } = require("./auth");
+const { mailgunApiKey } = require("./config");
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+const mailgun = new Mailgun(FormData);
+const MAILGUN_DOMAIN = "mg.citationneeded.news";
 
 app.get("/api", (_, res) => {
   // Dummy endpoint
@@ -30,31 +35,35 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
       toEmail = req.body.member.current.email;
     } else {
       logger.error({ message: "400: To email missing", data: httpLogFormatter({ req }) });
-      res.status(400).send({ message: "To email missing" });
+      return res.status(400).send({ message: "To email missing" });
     }
 
     let template;
     if (req.body?.member?.current?.status === "free") {
       template = "free subscriber welcome";
-    } else {
+    } else if (req.body?.member?.current?.status === "paid") {
       template = "paid subscriber welcome";
+    } else {
+      // We don't need to send welcome emails for comped users, which is the only other option
+      return res.sendStatus(200);
     }
 
-    const formData = new FormData();
-    formData.append("from", "Citation Needed <newsletter@citationneeded.news>");
-    formData.append("to", `${toName} <${toEmail}>`);
-    formData.append("subject", "Welcome to Citation Needed");
-    formData.append("template", template);
+    mg = mailgun.client({ username: "api", key: mailgunApiKey });
+    const resp = await mg.messages.create(MAILGUN_DOMAIN, {
+      from: "Citation Needed <newsletter@citationneeded.news>",
+      to: `${toName} <${toEmail}>`,
+      subject: "Welcome to Citation Needed",
+      template,
+    });
 
-    const resp = await fetch(mailgunWelcomeUrl, { method: "post", body: formData });
     logger.info({ message: "Successful newSubscriber webhook call", data: httpLogFormatter({ req, resp }) });
-    res.status(200).send();
+    return res.sendStatus(200);
   } catch (error) {
     logger.error({
       message: "500: Exception thrown in welcome email webhook processing.",
       data: httpLogFormatter({ req, error }),
     });
-    res.status(500).send({ message: "Exception thrown in welcome email webhook processing." });
+    return res.status(500).send({ message: "Exception thrown in welcome email webhook processing." });
   }
 });
 
