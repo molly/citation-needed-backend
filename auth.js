@@ -11,6 +11,11 @@ function validateWebhook(req, res, next) {
     if (req.get(GHOST_WEBHOOK_HEADER)) {
       const sig_header = req.get(GHOST_WEBHOOK_HEADER);
 
+      if (!/^sha256=([a-z0-9]*?), t=\d+$/.test(sig_header)) {
+        logger.error({ message: "403: Malformed webhook signature", data: httpLogFormatter({ req }) });
+        return res.status(403).send({ message: "Malformed webhook signature" });
+      }
+
       let [signature, timestampStr] = sig_header.split(", ");
       signature = signature.replace("sha256=", "");
       timestampStr = timestampStr.replace("t=", "");
@@ -39,6 +44,7 @@ function validateWebhook(req, res, next) {
       return res.status(403).send({ message: "Webhook signature missing from request" });
     }
   } catch (error) {
+    console.error(error);
     logger.error({
       message: "500: Exception thrown in webhook signature validation.",
       data: httpLogFormatter({ req, error }),
