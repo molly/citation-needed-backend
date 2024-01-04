@@ -13,7 +13,7 @@ function validateWebhook(req, res, next) {
 
       let [signature, timestampStr] = sig_header.split(", ");
       signature = signature.replace("sha256=", "");
-      timestampStr = timestamp.replace("t=", "");
+      timestampStr = timestampStr.replace("t=", "");
 
       // Check timestamp is reasonably recent
       const timestamp = parseInt(timestampStr, 10);
