@@ -51,9 +51,9 @@ describe("test new subscriber", () => {
     expect(resp.statusCode).toBe(500);
   });
 
-  test("sends free email template", async () => {
+  test("sends email template", async () => {
     nock("https://api.mailgun.net/")
-      .post("/v3/mg.citationneeded.news/messages", (body) => /template(["\r\n]*)free subscriber welcome/.test(body))
+      .post("/v3/mg.citationneeded.news/messages")
       .reply(200, { id: "mailgun-id-goes-here", message: "Queued. Thank you." });
 
     const body = {
@@ -68,28 +68,6 @@ describe("test new subscriber", () => {
     const signature = makeSignature(body);
 
     const resp = await request(app).post("/api/newSubscriber").send(body).set("X-Ghost-Signature", signature);
-    // If this returns a 200 we know the body matched "free subscriber welcome", or else Nock would throw
-    expect(resp.statusCode).toBe(200);
-  });
-
-  test("sends paid email template", async () => {
-    nock("https://api.mailgun.net/")
-      .post("/v3/mg.citationneeded.news/messages", (body) => /template(["\r\n]*)paid subscriber welcome/.test(body))
-      .reply(200, { id: "mailgun-id-goes-here", message: "Queued. Thank you." });
-
-    const body = {
-      member: {
-        current: {
-          name: "Molly",
-          email: "cn-test@mollywhite.net",
-          status: "paid",
-        },
-      },
-    };
-    const signature = makeSignature(body);
-
-    const resp = await request(app).post("/api/newSubscriber").send(body).set("X-Ghost-Signature", signature);
-    // If this returns a 200 we know the body matched "free subscriber welcome", or else Nock would throw
     expect(resp.statusCode).toBe(200);
   });
 });

@@ -6,7 +6,7 @@ const body = {
       email: "webhook@mollywhite.net",
       name: "m",
       note: null,
-      geolocation: null,
+      geolocation:null,
       subscribed: true,
       created_at: "2024-01-04T17:29:33.000Z",
       updated_at: "2024-01-04T17:29:33.000Z",

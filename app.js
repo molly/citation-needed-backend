@@ -39,12 +39,8 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
     }
 
     let template;
-    if (req.body?.member?.current?.status === "free") {
-      template = "free subscriber welcome";
-    } else if (req.body?.member?.current?.status === "paid") {
-      template = "paid subscriber welcome";
-    } else {
-      // We don't need to send welcome emails for comped users, which is the only other option
+    if (req.body?.member?.current?.comped) {
+      // Don't need to send welcome emails for comped users
       return res.sendStatus(200);
     }
 
@@ -53,7 +49,7 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
       from: "Citation Needed <newsletter@citationneeded.news>",
       to: `${toName} <${toEmail}>`,
       subject: "Welcome to Citation Needed",
-      template,
+      template: "free subscriber welcome", // Despite the name, this goes to all subscribers
     });
 
     logger.info({ message: "Successful newSubscriber webhook call", data: httpLogFormatter({ req, resp }) });
