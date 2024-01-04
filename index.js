@@ -3,7 +3,7 @@ const morgan = require("morgan");
 const https = require("https");
 const fs = require("fs");
 const path = require("path");
-const rfs = require("rfs");
+const rfs = require("rotating-file-stream");
 
 const { validateWebhook } = require("./auth");
 
