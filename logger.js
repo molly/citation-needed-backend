@@ -20,4 +20,20 @@ const logger = winston.createLogger({
   transports: [transport],
 });
 
-module.exports = { logger };
+const httpLogFormatter = ({ req, ...rest }) => {
+  if (req) {
+    return {
+      ...rest,
+      req: {
+        headers: req.headers,
+        method: req.method,
+        body: req.body,
+        params: req.params,
+        query: req.query,
+      },
+    };
+  }
+  return rest;
+};
+
+module.exports = { logger, httpLogFormatter };

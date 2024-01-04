@@ -1,7 +1,7 @@
 const express = require("express");
 const path = require("path");
 
-const { logger } = require("./logger");
+const { logger, httpLogFormatter } = require("./logger");
 const { validateWebhook } = require("./auth");
 
 const PORT = process.env.PORT || 5001;
@@ -21,7 +21,7 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
     if (req.body?.member?.current?.email) {
       toEmail = req.body.member.current.email;
     } else {
-      logger.error({ message: "400: To email missing", data: { req, res } });
+      logger.error({ message: "400: To email missing", data: httpLogFormatter({ req }) });
       res.status(400).send({ message: "To email missing" });
     }
 
@@ -38,11 +38,14 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
     formData.append("subject", "Welcome to Citation Needed");
     formData.append("template", template);
 
-    const resp = await fetch(mailgunWelcomeUrl, { method: "post", body: "formData" });
-    logger.info({ message: "Successful newSubscriber webhook call", data: { req, resp } });
+    const resp = await fetch(mailgunWelcomeUrl, { method: "post", body: formData });
+    logger.info({ message: "Successful newSubscriber webhook call", data: httpLogFormatter({ req, resp }) });
     res.status(200).send();
   } catch (error) {
-    logger.error({ message: "500: Exception thrown in welcome email webhook processing.", data: { req, res, error } });
+    logger.error({
+      message: "500: Exception thrown in welcome email webhook processing.",
+      data: httpLogFormatter({ req, error }),
+    });
     res.status(500).send({ message: "Exception thrown in welcome email webhook processing." });
   }
 });
