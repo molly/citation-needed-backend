@@ -1,25 +1,14 @@
 const express = require("express");
-const morgan = require("morgan");
-const https = require("https");
-const fs = require("fs");
 const path = require("path");
-const rfs = require("rotating-file-stream");
 
+const { logger } = require("./logger");
 const { validateWebhook } = require("./auth");
-
-const config = require("./config");
 
 const PORT = process.env.PORT || 5001;
 
 const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-const logStream = rfs.createStream("backend.log", {
-  interval: "1d",
-  path: path.join(__dirname, "log"),
-});
-app.use(morgan("combined", { stream: logStream }));
 
 app.post("/newSubscriber", validateWebhook, async (req, res) => {
   try {
@@ -32,6 +21,7 @@ app.post("/newSubscriber", validateWebhook, async (req, res) => {
     if (req.body?.member?.current?.email) {
       toEmail = req.body.member.current.email;
     } else {
+      logger.error({ message: "400: To email missing", data: { req, res } });
       res.status(400).send({ message: "To email missing" });
     }
 
@@ -49,24 +39,12 @@ app.post("/newSubscriber", validateWebhook, async (req, res) => {
     formData.append("template", template);
 
     const resp = await fetch(mailgunWelcomeUrl, { method: "post", body: "formData" });
+    logger.info({ message: "Successful newSubscriber webhook call", data: { req, resp } });
     res.status(200).send();
   } catch (error) {
+    logger.error({ message: "500: Exception thrown in welcome email webhook processing.", data: { req, res, error } });
     res.status(500).send({ message: "Exception thrown in welcome email webhook processing." });
   }
 });
 
-if (process.argv[2] === "prod") {
-  https
-    .createServer(
-      {
-        key: fs.readFileSync(`${config.certPath}/privkey.pem`),
-        cert: fs.readFileSync(`${config.certPath}/cert.pem`),
-        ca: fs.readFileSync(`${config.certPath}/chain.pem`),
-        requestCert: true,
-      },
-      app
-    )
-    .listen(PORT);
-} else {
-  app.listen(PORT);
-}
+app.listen(PORT);

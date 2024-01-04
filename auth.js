@@ -1,5 +1,6 @@
 const crypto = require("crypto");
 
+const { logger } = require("./logger");
 const { ghostWebhookSecret } = require("./config");
 
 const GHOST_WEBHOOK_HEADER = "X-Ghost-Signature";
@@ -16,9 +17,11 @@ function validateWebhook(req, res, next) {
     // Check timestamp is reasonably recent
     const timestamp = parseInt(timestampStr, 10);
     if (isNaN(timestamp)) {
+      logger.error({ message: "403: Malformed webhook signature", data: { req } });
       return res.status(403).send({ message: "Malformed webhook signature" });
     }
     if (Math.abs(Date.now() - timestamp) > FIVE_MINUTES) {
+      logger.error({ message: "403: Stale webhook", data: { req } });
       return res.status(403).send({ message: "Stale webhook" });
     }
 
@@ -27,9 +30,11 @@ function validateWebhook(req, res, next) {
     if (expected === signature) {
       next();
     } else {
+      logger.error({ message: "403: Invalid webhook signature", data: { req } });
       return res.status(403).send({ message: "Invalid webhook signature" });
     }
   } else {
+    logger.error({ message: "403: Webhook signature missing from request", data: { req } });
     return res.status(403).send({ message: "Webhook signature missing from request" });
   }
 }
