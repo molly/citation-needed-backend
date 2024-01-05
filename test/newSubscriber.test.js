@@ -1,8 +1,7 @@
 const request = require("supertest");
-const FormData = require("form-data");
 const nock = require("nock");
 
-const app = require("../app");
+const { app } = require("../app");
 const { makeSignature } = require("./helpers");
 
 describe("test new subscriber", () => {

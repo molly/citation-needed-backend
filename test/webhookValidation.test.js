@@ -2,7 +2,7 @@ const request = require("supertest");
 const crypto = require("crypto");
 
 const { ghostWebhookSecret } = require("../config");
-const app = require("../app");
+const { app } = require("../app");
 const { makeSignature } = require("./helpers");
 
 describe("test webhook validation", () => {
@@ -16,7 +16,7 @@ describe("test webhook validation", () => {
     const resp = await request(app).post("/api");
     expect(resp.statusCode).toBe(403);
     const error = JSON.parse(resp.text);
-    expect(error.message).toBe("Webhook signature missing from request");
+    expect(error.message).toBe("Ghost webhook signature missing from request");
   });
 
   test("require properly formatted webhook signature", async () => {
@@ -24,7 +24,7 @@ describe("test webhook validation", () => {
     const resp = await request(app).post("/api").set("X-Ghost-Signature", "");
     expect(resp.statusCode).toBe(403);
     const error = JSON.parse(resp.text);
-    expect(error.message).toBe("Webhook signature missing from request");
+    expect(error.message).toBe("Ghost webhook signature missing from request");
   });
 
   test("require properly formatted webhook signature with timestamp", async () => {
@@ -32,7 +32,7 @@ describe("test webhook validation", () => {
     const resp = await request(app).post("/api").set("X-Ghost-Signature", "sha256=sdf");
     expect(resp.statusCode).toBe(403);
     const error = JSON.parse(resp.text);
-    expect(error.message).toBe("Malformed webhook signature");
+    expect(error.message).toBe("Malformed Ghost webhook signature");
   });
 
   test("require recent timestamp", async () => {
@@ -44,7 +44,7 @@ describe("test webhook validation", () => {
       );
     expect(resp.statusCode).toBe(403);
     const error = JSON.parse(resp.text);
-    expect(error.message).toBe("Stale webhook");
+    expect(error.message).toBe("Stale Ghost webhook");
   });
 
   test("valid webhook signature", async () => {

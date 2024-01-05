@@ -6,14 +6,14 @@ const { ghostWebhookSecret } = require("./config");
 const GHOST_WEBHOOK_HEADER = "X-Ghost-Signature";
 const FIVE_MINUTES = 5 * 60 * 1000;
 
-function validateWebhook(req, res, next) {
+function validateGhostWebhook(req, res, next) {
   try {
     if (req.get(GHOST_WEBHOOK_HEADER)) {
       const sig_header = req.get(GHOST_WEBHOOK_HEADER);
 
       if (!/^sha256=([a-z0-9]*?), t=\d+$/.test(sig_header)) {
-        logger.error({ message: "403: Malformed webhook signature", data: httpLogFormatter({ req }) });
-        return res.status(403).send({ message: "Malformed webhook signature" });
+        logger.error({ message: "403: Malformed Ghost webhook signature", data: httpLogFormatter({ req }) });
+        return res.status(403).send({ message: "Malformed Ghost webhook signature" });
       }
 
       let [signature, timestampStr] = sig_header.split(", ");
@@ -23,35 +23,35 @@ function validateWebhook(req, res, next) {
       // Check timestamp is reasonably recent
       const timestamp = parseInt(timestampStr, 10);
       if (isNaN(timestamp)) {
-        logger.error({ message: "403: Malformed webhook signature", data: httpLogFormatter({ req }) });
-        return res.status(403).send({ message: "Malformed webhook signature" });
+        logger.error({ message: "403: Malformed Ghost webhook signature", data: httpLogFormatter({ req }) });
+        return res.status(403).send({ message: "Malformed Ghost webhook signature" });
       }
       if (Math.abs(Date.now() - timestamp) > FIVE_MINUTES) {
-        logger.error({ message: "403: Stale webhook", data: httpLogFormatter({ req }) });
-        return res.status(403).send({ message: "Stale webhook" });
+        logger.error({ message: "403: Stale Ghost webhook", data: httpLogFormatter({ req }) });
+        return res.status(403).send({ message: "Stale Ghost webhook" });
       }
 
-      const body = JSON.stringify(req.body);
+      const body = JSON.stringify(req.body || {});
       const expected = crypto.createHmac("sha256", ghostWebhookSecret).update(body).digest("hex");
       if (expected === signature) {
         next();
       } else {
-        logger.error({ message: "403: Invalid webhook signature", data: httpLogFormatter({ req }) });
-        return res.status(403).send({ message: "Invalid webhook signature" });
+        logger.error({ message: "403: Invalid Ghost webhook signature", data: httpLogFormatter({ req }) });
+        return res.status(403).send({ message: "Invalid Ghost webhook signature" });
       }
     } else {
-      logger.error({ message: "403: Webhook signature missing from request", data: httpLogFormatter({ req }) });
-      return res.status(403).send({ message: "Webhook signature missing from request" });
+      logger.error({ message: "403: Ghost webhook signature missing from request", data: httpLogFormatter({ req }) });
+      return res.status(403).send({ message: "Ghost webhook signature missing from request" });
     }
   } catch (error) {
     console.error(error);
     logger.error({
-      message: "500: Exception thrown in webhook signature validation.",
+      message: "500: Exception thrown in Ghost webhook signature validation.",
       data: httpLogFormatter({ req, error }),
     });
   }
 }
 
 module.exports = {
-  validateWebhook,
+  validateGhostWebhook,
 };

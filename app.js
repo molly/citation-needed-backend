@@ -1,14 +1,14 @@
+const { logger, httpLogFormatter } = require("./logger");
+const { validateGhostWebhook } = require("./auth");
+const { formatCurrency, getHumanTime, getDaysUntilRenewal } = require("./helpers");
+const { mailgunApiKey, stripeWebhookSecret, stripeSecretKey } = require("./config");
+
 const express = require("express");
 const Mailgun = require("mailgun.js");
 const FormData = require("form-data");
-
-const { logger, httpLogFormatter } = require("./logger");
-const { validateWebhook } = require("./auth");
-const { mailgunApiKey } = require("./config");
+const stripe = require("stripe")(stripeSecretKey);
 
 const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 const mailgun = new Mailgun(FormData);
 const MAILGUN_DOMAIN = "mg.citationneeded.news";
@@ -18,12 +18,12 @@ app.get("/api", (_, res) => {
   res.sendStatus(200);
 });
 
-app.post("/api", validateWebhook, (_, res) => {
+app.post("/api", validateGhostWebhook, (_, res) => {
   // Dummy endpoint to test webhook validation
   res.sendStatus(200);
 });
 
-app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
+app.post("/api/newSubscriber", express.json(), validateGhostWebhook, async (req, res) => {
   try {
     let toName = "";
     if (req.body?.member?.current?.name) {
@@ -38,16 +38,17 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
       return res.status(400).send({ message: "To email missing" });
     }
 
-    let template;
-    if (req.body?.member?.current?.comped) {
-      // Don't need to send welcome emails for comped users
-      return res.sendStatus(200);
+    let to;
+    if (toName) {
+      to = `${toName} <${toEmail}>`;
+    } else {
+      to = `<${toEmail}>`;
     }
 
     mg = mailgun.client({ username: "api", key: mailgunApiKey });
     const resp = await mg.messages.create(MAILGUN_DOMAIN, {
       from: "Citation Needed <newsletter@citationneeded.news>",
-      to: `${toName} <${toEmail}>`,
+      to,
       subject: "Welcome to Citation Needed",
       template: "free subscriber welcome", // Despite the name, this goes to all subscribers
     });
@@ -63,4 +64,77 @@ app.post("/api/newSubscriber", validateWebhook, async (req, res) => {
   }
 });
 
-module.exports = app;
+const processUpcomingInvoiceWebhook = async (event) => {
+  const upcoming = event.data.object;
+  const name = upcoming.customer_name;
+  const email = upcoming.customer_email;
+
+  const amount_due = upcoming.amount_due;
+  const currency = upcoming.currency;
+  const country = upcoming.account_country;
+
+  const lineItem = upcoming.lines.data[0];
+  const productId = lineItem.plan.product;
+  const productDetails = await stripe.products.retrieve(productId);
+  const tierName = productDetails.name;
+  const interval = lineItem.plan.interval;
+
+  const renewalDateSeconds = upcoming.next_payment_attempt;
+  const renewalDate = new Date(renewalDateSeconds * 1000);
+  const humanTime = getHumanTime(renewalDate);
+  const daysUntilRenewal = getDaysUntilRenewal(renewalDate);
+
+  let to;
+  if (name) {
+    to = `${name} <${email}>`;
+  } else {
+    to = `<${email}>`;
+  }
+
+  mg = mailgun.client({ username: "api", key: mailgunApiKey });
+  const resp = await mg.messages.create(MAILGUN_DOMAIN, {
+    from: "Citation Needed <newsletter@citationneeded.news>",
+    to,
+    subject: `Your subscription to Citation Needed will renew in ${daysUntilRenewal} day${
+      daysUntilRenewal === 1 ? "" : "s"
+    }`,
+    template: "renewal",
+    "h:X-Mailgun-Variables": JSON.stringify({
+      renewal_date: humanTime,
+      tier_name: tierName,
+      subscription_amount: formatCurrency(country, currency, amount_due),
+      subscription_interval: interval,
+    }),
+  });
+  return resp;
+};
+
+app.post("/api/stripeWebhook", express.raw({ type: "application/json" }), async (req, res) => {
+  try {
+    const signature = req.headers["stripe-signature"];
+    let event = req.body;
+    try {
+      event = stripe.webhooks.constructEvent(req.body, signature, stripeWebhookSecret);
+    } catch (err) {
+      logger.error({ message: "403: Invalid Stripe webhook signature", data: httpLogFormatter({ req, error: err }) });
+      return res.status(403).send({ message: "Invalid Stripe webhook signature", error: err });
+    }
+
+    switch (event.type) {
+      case "invoice.upcoming":
+        const resp = await processUpcomingInvoiceWebhook(event);
+        return res.sendStatus(200);
+      default:
+        return res.sendStatus(200);
+    }
+  } catch (error) {
+    console.error(error);
+    logger.error({
+      message: "500: Exception thrown in Stripe webhook processing.",
+      data: httpLogFormatter({ req, error }),
+    });
+    return res.status(500).send({ message: "Exception thrown in Stripe webhook processing." });
+  }
+});
+
+module.exports = { app, processUpcomingInvoiceWebhook };

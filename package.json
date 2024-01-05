@@ -29,7 +29,8 @@
     "fs": "^0.0.1-security",
     "https": "^1.0.0",
     "mailgun.js": "^9.4.1",
-    "path": "^0.12.7"
+    "path": "^0.12.7",
+    "stripe": "^14.11.0"
   },
   "devDependencies": {
     "form-data": "^4.0.0",
