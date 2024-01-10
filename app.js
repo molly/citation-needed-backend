@@ -1,17 +1,27 @@
 const { logger, httpLogFormatter } = require("./logger");
 const { validateGhostWebhook } = require("./auth");
 const { formatCurrency, getHumanTime, getDaysUntilRenewal } = require("./helpers");
-const { mailgunApiKey, stripeWebhookSecret, stripeSecretKey } = require("./config");
+const { mailgunApiKey, stripeWebhookSecret, stripeSecretKey, ghostAdminApi } = require("./config");
 
 const express = require("express");
 const Mailgun = require("mailgun.js");
 const FormData = require("form-data");
 const stripe = require("stripe")(stripeSecretKey);
+const GhostAdminAPI = require("@tryghost/admin-api");
+
+const fs = require("fs");
+const { parse } = require("csv-parse");
 
 const app = express();
 
 const mailgun = new Mailgun(FormData);
 const MAILGUN_DOMAIN = "mg.citationneeded.news";
+
+const adminApi = new GhostAdminAPI({
+  url: "https://citationneeded.news",
+  version: "v5.75",
+  key: ghostAdminApi,
+});
 
 app.get("/api", (_, res) => {
   // Dummy endpoint
@@ -47,7 +57,7 @@ app.post("/api/newSubscriber", express.json(), validateGhostWebhook, async (req,
 
     mg = mailgun.client({ username: "api", key: mailgunApiKey });
     const resp = await mg.messages.create(MAILGUN_DOMAIN, {
-      from: "Citation Needed <newsletter@citationneeded.news>",
+      from: "Citation Needed by Molly White <support@citationneeded.news>",
       to,
       subject: "Welcome to Citation Needed",
       template: "free subscriber welcome", // Despite the name, this goes to all subscribers
@@ -93,7 +103,7 @@ const processUpcomingInvoiceWebhook = async (event) => {
 
   mg = mailgun.client({ username: "api", key: mailgunApiKey });
   const resp = await mg.messages.create(MAILGUN_DOMAIN, {
-    from: "Citation Needed <newsletter@citationneeded.news>",
+    from: "Citation Needed by Molly White <support@citationneeded.news>",
     to,
     subject: `Your subscription to Citation Needed will renew in ${daysUntilRenewal} day${
       daysUntilRenewal === 1 ? "" : "s"

@@ -24,7 +24,10 @@
   },
   "homepage": "https://github.com/molly/citation-needed-backend#readme",
   "dependencies": {
+    "@tryghost/admin-api": "^1.13.11",
     "crypto": "^1.0.1",
+    "csv-parse": "^5.5.3",
+    "csv-parser": "^3.0.0",
     "express": "^4.18.2",
     "fs": "^0.0.1-security",
     "https": "^1.0.0",
