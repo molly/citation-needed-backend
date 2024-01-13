@@ -88,6 +88,10 @@ const processUpcomingInvoiceWebhook = async (event) => {
   const productDetails = await stripe.products.retrieve(productId);
   const tierName = productDetails.name;
   const interval = lineItem.plan.interval;
+  if (interval === "month") {
+    // Don't send emails for monthly subscribers, otherwise they'll get a renewal email every month
+    return null;
+  }
 
   const renewalDateSeconds = upcoming.next_payment_attempt;
   const renewalDate = new Date(renewalDateSeconds * 1000);
@@ -145,6 +149,28 @@ app.post("/api/stripeWebhook", express.raw({ type: "application/json" }), async 
     });
     return res.status(500).send({ message: "Exception thrown in Stripe webhook processing." });
   }
+});
+
+app.post("/api/test", async (req, res) => {
+  const emails = [];
+  const nonFree = [];
+  fs.createReadStream("/Users/molly/Desktop/todelete.csv")
+    .pipe(parse({ delimiter: ",", from_line: 2 }))
+    .on("data", (data) => {
+      emails.push(data[0]);
+    })
+    .on("end", async () => {
+      for (let email of emails) {
+        const resp = await adminApi.members.browse({ filter: `email:'${email}'` });
+        const member = resp[0];
+        if (member.status !== "free") {
+          console.log(`Non-free member! ${email}`);
+          nonFree.push(email);
+        }
+      }
+      console.log("NONFREE");
+      console.log(nonFree);
+    });
 });
 
 module.exports = { app, processUpcomingInvoiceWebhook };
