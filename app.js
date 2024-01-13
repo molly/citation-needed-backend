@@ -1,12 +1,12 @@
 const { logger, httpLogFormatter } = require("./logger");
 const { validateGhostWebhook } = require("./auth");
 const { formatCurrency, getHumanTime, getDaysUntilRenewal } = require("./helpers");
-const { mailgunApiKey, stripeWebhookSecret, stripeSecretKey, ghostAdminApi } = require("./config");
+const { mailgunApiKey, stripeWebhookSecret, stripeTestSecretKey, ghostAdminApi } = require("./config");
 
 const express = require("express");
 const Mailgun = require("mailgun.js");
 const FormData = require("form-data");
-const stripe = require("stripe")(stripeSecretKey);
+const stripe = require("stripe")(stripeTestSecretKey);
 const GhostAdminAPI = require("@tryghost/admin-api");
 
 const fs = require("fs");
@@ -61,6 +61,7 @@ app.post("/api/newSubscriber", express.json(), validateGhostWebhook, async (req,
       to,
       subject: "Welcome to Citation Needed",
       template: "free subscriber welcome", // Despite the name, this goes to all subscribers
+      "h:List-Id": "Citation Needed by Molly White <citationneeded.news>",
     });
 
     logger.info({ message: "Successful newSubscriber webhook call", data: httpLogFormatter({ req, resp }) });
@@ -113,6 +114,7 @@ const processUpcomingInvoiceWebhook = async (event) => {
       daysUntilRenewal === 1 ? "" : "s"
     }`,
     template: "renewal",
+    "h:List-Id": "Citation Needed by Molly White <citationneeded.news>",
     "h:X-Mailgun-Variables": JSON.stringify({
       renewal_date: humanTime,
       tier_name: tierName,
