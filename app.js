@@ -7,21 +7,11 @@ const express = require("express");
 const Mailgun = require("mailgun.js");
 const FormData = require("form-data");
 const stripe = require("stripe")(stripeTestSecretKey);
-const GhostAdminAPI = require("@tryghost/admin-api");
-
-const fs = require("fs");
-const { parse } = require("csv-parse");
 
 const app = express();
 
 const mailgun = new Mailgun(FormData);
 const MAILGUN_DOMAIN = "mg.citationneeded.news";
-
-const adminApi = new GhostAdminAPI({
-  url: "https://citationneeded.news",
-  version: "v5.75",
-  key: ghostAdminApi,
-});
 
 app.get("/api", (_, res) => {
   // Dummy endpoint
@@ -151,28 +141,6 @@ app.post("/api/stripeWebhook", express.raw({ type: "application/json" }), async 
     });
     return res.status(500).send({ message: "Exception thrown in Stripe webhook processing." });
   }
-});
-
-app.post("/api/test", async (req, res) => {
-  const emails = [];
-  const nonFree = [];
-  fs.createReadStream("/Users/molly/Desktop/todelete.csv")
-    .pipe(parse({ delimiter: ",", from_line: 2 }))
-    .on("data", (data) => {
-      emails.push(data[0]);
-    })
-    .on("end", async () => {
-      for (let email of emails) {
-        const resp = await adminApi.members.browse({ filter: `email:'${email}'` });
-        const member = resp[0];
-        if (member.status !== "free") {
-          console.log(`Non-free member! ${email}`);
-          nonFree.push(email);
-        }
-      }
-      console.log("NONFREE");
-      console.log(nonFree);
-    });
 });
 
 module.exports = { app, processUpcomingInvoiceWebhook };
