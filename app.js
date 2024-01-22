@@ -1,12 +1,12 @@
 const { logger, httpLogFormatter } = require("./logger");
 const { validateGhostWebhook } = require("./auth");
 const { formatCurrency, getHumanTime, getDaysUntilRenewal } = require("./helpers");
-const { mailgunApiKey, stripeWebhookSecret, stripeTestSecretKey, ghostAdminApi } = require("./config");
+const { mailgunApiKey, stripeWebhookSecret, stripeLiveSecretKey } = require("./config");
 
 const express = require("express");
 const Mailgun = require("mailgun.js");
 const FormData = require("form-data");
-const stripe = require("stripe")(stripeTestSecretKey);
+const stripe = require("stripe")(stripeLiveSecretKey);
 
 const app = express();
 
