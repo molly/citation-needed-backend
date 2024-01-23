@@ -67,4 +67,14 @@ describe("currency formatting", () => {
     const expected = "BHD 100.000";
     expect(formatCurrency("BH", "bhd", "100000")).toBe(expected);
   });
+
+  test("formats USD without prefix unless forced", () => {
+    const expected = "$50";
+    expect(formatCurrency("US", "usd", "5000")).toBe(expected);
+  });
+
+  test("formats USD with prefix if forced", () => {
+    const expected = "US$50";
+    expect(formatCurrency("US", "usd", "5000", true)).toBe(expected);
+  });
 });

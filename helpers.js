@@ -52,7 +52,7 @@ const getDollarPrefix = (currency) => {
   return currency.toUpperCase() + "$";
 };
 
-const formatCurrency = (countryCode, currencyCode, amount) => {
+const formatCurrency = (countryCode, currencyCode, amount, forceUSPrefix = false) => {
   let removeDecimals = false;
   let divisor = 100;
   if (zeroDecimalCurrencyCodes.includes(currencyCode)) {
@@ -74,6 +74,8 @@ const formatCurrency = (countryCode, currencyCode, amount) => {
   if (dollarCurrencyCodes.includes(currencyCode)) {
     // Disambiguate $ for non-USD
     humanReadableAmount = humanReadableAmount.replace("$", getDollarPrefix(currencyCode));
+  } else if (currencyCode === "usd" && forceUSPrefix) {
+    humanReadableAmount = humanReadableAmount.replace("$", "US$");
   }
 
   return humanReadableAmount;

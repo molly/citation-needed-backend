@@ -108,7 +108,7 @@ const processUpcomingInvoiceWebhook = async (event) => {
     "h:X-Mailgun-Variables": JSON.stringify({
       renewal_date: humanTime,
       tier_name: tierName,
-      subscription_amount: formatCurrency(country, currency, amount_due),
+      subscription_amount: formatCurrency(country, currency, amount_due, true),
       subscription_interval: interval,
     }),
   });
