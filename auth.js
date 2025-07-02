@@ -31,8 +31,9 @@ function validateGhostWebhook(req, res, next) {
         return res.status(403).send({ message: "Stale Ghost webhook" });
       }
 
+      // Validate signature
       const body = JSON.stringify(req.body || {});
-      const expected = crypto.createHmac("sha256", ghostWebhookSecret).update(body).digest("hex");
+      const expected = crypto.createHmac("sha256", ghostWebhookSecret).update(`${body}${timestampStr}`).digest("hex");
       if (expected === signature) {
         next();
       } else {
