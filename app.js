@@ -23,48 +23,6 @@ app.post("/api", validateGhostWebhook, (_, res) => {
   res.sendStatus(200);
 });
 
-app.post("/api/newSubscriber", express.json(), validateGhostWebhook, async (req, res) => {
-  try {
-    let toName = "";
-    if (req.body?.member?.current?.name) {
-      toName = req.body.member.current.name;
-    }
-
-    let toEmail;
-    if (req.body?.member?.current?.email) {
-      toEmail = req.body.member.current.email;
-    } else {
-      logger.error({ message: "400: To email missing", data: httpLogFormatter({ req }) });
-      return res.status(400).send({ message: "To email missing" });
-    }
-
-    let to;
-    if (toName) {
-      to = `${toName} <${toEmail}>`;
-    } else {
-      to = `<${toEmail}>`;
-    }
-
-    mg = mailgun.client({ username: "api", key: mailgunApiKey });
-    const resp = await mg.messages.create(MAILGUN_DOMAIN, {
-      from: "Citation Needed by Molly White <support@citationneeded.news>",
-      to,
-      subject: "Welcome to Citation Needed",
-      template: "free subscriber welcome", // Despite the name, this goes to all subscribers
-      "h:List-Id": "Citation Needed by Molly White <citationneeded.news>",
-    });
-
-    logger.info({ message: "Successful newSubscriber webhook call", data: httpLogFormatter({ req, resp }) });
-    return res.sendStatus(200);
-  } catch (error) {
-    logger.error({
-      message: "500: Exception thrown in welcome email webhook processing.",
-      data: httpLogFormatter({ req, error }),
-    });
-    return res.status(500).send({ message: "Exception thrown in welcome email webhook processing." });
-  }
-});
-
 const processUpcomingInvoiceWebhook = async (event) => {
   const upcoming = event.data.object;
   const name = upcoming.customer_name;
