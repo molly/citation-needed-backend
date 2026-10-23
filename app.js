@@ -5,7 +5,6 @@ const { mailgunApiKey, stripeWebhookSecret, stripeLiveSecretKey } = require("./c
 
 const express = require("express");
 const Mailgun = require("mailgun.js");
-const FormData = require("form-data");
 const stripe = require("stripe")(stripeLiveSecretKey);
 
 const app = express();

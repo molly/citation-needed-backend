@@ -54,7 +54,7 @@ describe("currency formatting", () => {
   });
 
   test("formats PLN", () => {
-    const expected = "PLN 100";
+    const expected = "100 PLN";
     expect(formatCurrency("PL", "pln", 10000)).toBe(expected);
   });
 

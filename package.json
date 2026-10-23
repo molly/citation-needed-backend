@@ -24,24 +24,20 @@
   },
   "homepage": "https://github.com/molly/citation-needed-backend#readme",
   "dependencies": {
-    "@tryghost/admin-api": "^1.13.11",
-    "crypto": "^1.0.1",
-    "csv-parse": "^5.5.3",
-    "csv-parser": "^3.0.0",
-    "express": "^4.18.2",
-    "fs": "^0.0.1-security",
-    "https": "^1.0.0",
-    "mailgun.js": "^9.4.1",
-    "path": "^0.12.7",
-    "stripe": "^14.11.0"
+    "@tryghost/admin-api": "^1.14.14",
+    "express": "^5.3.0",
+    "mailgun.js": "^14.1.0",
+    "stripe": "^23.0.1",
+    "winston": "^3.19.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
-    "form-data": "^4.0.0",
-    "jest": "^29.7.0",
-    "nock": "^13.4.0",
-    "nodemon": "^3.0.2",
-    "supertest": "^6.3.3",
-    "winston": "^3.11.0",
-    "winston-daily-rotate-file": "^4.7.1"
+    "jest": "^30.5.2",
+    "nock": "^14.0.17",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.1"
+  },
+  "engines": {
+    "node": ">=22"
   }
 }
